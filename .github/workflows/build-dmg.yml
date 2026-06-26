@@ -42,6 +42,7 @@ jobs:
         run: |
           chmod +x scripts/sign-app.sh
           ./scripts/sign-app.sh build/Release/MacCalendar.app
+        continue-on-error: false
 
       - name: Install create-dmg
         run: brew install create-dmg
