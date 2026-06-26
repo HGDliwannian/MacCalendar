@@ -16,6 +16,7 @@ BUILD_DIR="$ROOT_DIR/build"
 DMG_SOURCE="$ROOT_DIR/dmg_source"
 DIST_DIR="$ROOT_DIR/dist"
 APP_PATH="$BUILD_DIR/Release/MacCalendar.app"
+EXEC_PATH="$APP_PATH/Contents/MacOS/MacCalendar"
 DMG_PATH="$DIST_DIR/MacCalendar.dmg"
 
 echo "==> 清理旧产物"
@@ -27,18 +28,25 @@ xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
+  -sdk macosx \
+  ENABLE_HARDENED_RUNTIME=NO \
   CODE_SIGN_IDENTITY="-" \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
+  PROVISIONING_PROFILE_SPECIFIER="" \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 
-if [[ ! -d "$APP_PATH" ]]; then
-  echo "错误：未找到 $APP_PATH"
+if [[ ! -f "$EXEC_PATH" ]]; then
+  echo "错误：未找到 $EXEC_PATH"
   exit 1
 fi
 
-echo "==> 验证/补签 app"
-"$ROOT_DIR/scripts/sign-app.sh" "$APP_PATH"
+echo "==> ad-hoc 签名"
+xattr -cr "$APP_PATH"
+codesign --force --sign - --timestamp=none "$EXEC_PATH"
+codesign --force --sign - --timestamp=none "$APP_PATH"
 
 echo "==> 准备 create-dmg"
 if ! command -v create-dmg >/dev/null 2>&1; then
@@ -64,6 +72,5 @@ create-dmg \
 
 echo ""
 echo "打包完成：$DMG_PATH"
-echo "安装：打开 dmg，将 MacCalendar.app 拖入「应用程序」"
-echo "若仍提示无法验证开发者，可在终端执行："
+echo "安装后若提示无法打开，请执行："
 echo "  xattr -cr /Applications/MacCalendar.app"

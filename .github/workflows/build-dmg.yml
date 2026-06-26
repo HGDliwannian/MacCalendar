@@ -26,6 +26,8 @@ jobs:
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
+            -sdk macosx \
+            ENABLE_HARDENED_RUNTIME=NO \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -44,10 +46,18 @@ jobs:
       - name: Ad-hoc sign app
         run: |
           APP=build/Release/MacCalendar.app
-          test -f "$APP/Contents/MacOS/MacCalendar"
+          EXEC="$APP/Contents/MacOS/MacCalendar"
+          echo "== App bundle =="
+          ls -la "$APP/Contents/MacOS/" || true
+          if [[ ! -f "$EXEC" ]]; then
+            echo "ERROR: 找不到可执行文件 $EXEC"
+            exit 1
+          fi
           xattr -cr "$APP"
-          codesign --force --deep --sign - "$APP"
-          file "$APP/Contents/MacOS/MacCalendar"
+          # 先签 executable，再签 .app（比 --deep 更稳）
+          codesign --force --sign - --timestamp=none "$EXEC"
+          codesign --force --sign - --timestamp=none "$APP"
+          file "$EXEC"
           codesign -dv "$APP" 2>&1 || true
 
       - name: Install create-dmg
