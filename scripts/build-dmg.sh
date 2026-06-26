@@ -22,20 +22,19 @@ echo "==> 清理旧产物"
 rm -rf "$BUILD_DIR" "$DMG_SOURCE" "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "==> 编译 Release（通用二进制 + ad-hoc 签名）"
+echo "==> 编译 Release"
 xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
   -sdk macosx \
-  -destination 'generic/platform=macOS' \
-  CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="-" \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
   PROVISIONING_PROFILE_SPECIFIER="" \
   ARCHS="arm64 x86_64" \
   ONLY_ACTIVE_ARCH=NO \
-  ENABLE_HARDENED_RUNTIME=NO \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 
@@ -44,7 +43,7 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-echo "==> 签名 app"
+echo "==> 签名 app（ad-hoc，避免 macOS 报已损坏）"
 "$ROOT_DIR/scripts/sign-app.sh" "$APP_PATH"
 
 echo "==> 准备 create-dmg"

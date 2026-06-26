@@ -28,14 +28,13 @@ jobs:
             -scheme "MacCalendar" \
             -configuration Release \
             -sdk macosx \
-            -destination 'generic/platform=macOS' \
-            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
             ARCHS="arm64 x86_64" \
             ONLY_ACTIVE_ARCH=NO \
-            ENABLE_HARDENED_RUNTIME=NO \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
@@ -45,6 +44,9 @@ jobs:
             tail -80 build.log
             exit 1
           fi
+
+          echo "Built executable:"
+          file build/Release/MacCalendar.app/Contents/MacOS/MacCalendar || true
 
       - name: Sign app bundle
         run: |
