@@ -22,16 +22,20 @@ echo "==> 清理旧产物"
 rm -rf "$BUILD_DIR" "$DMG_SOURCE" "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "==> 编译 Release"
+echo "==> 编译 Release（通用二进制 + ad-hoc 签名）"
 xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
+  -sdk macosx \
+  -destination 'generic/platform=macOS' \
+  CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="-" \
-  CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
   PROVISIONING_PROFILE_SPECIFIER="" \
+  ARCHS="arm64 x86_64" \
+  ONLY_ACTIVE_ARCH=NO \
+  ENABLE_HARDENED_RUNTIME=NO \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 
@@ -40,6 +44,9 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
+echo "==> 签名 app"
+"$ROOT_DIR/scripts/sign-app.sh" "$APP_PATH"
+
 echo "==> 准备 create-dmg"
 if ! command -v create-dmg >/dev/null 2>&1; then
   brew install create-dmg
@@ -47,7 +54,8 @@ fi
 
 echo "==> 生成 DMG"
 mkdir -p "$DMG_SOURCE"
-cp -R "$APP_PATH" "$DMG_SOURCE/"
+ditto "$APP_PATH" "$DMG_SOURCE/MacCalendar.app"
+xattr -cr "$DMG_SOURCE/MacCalendar.app"
 
 create-dmg \
   --volname "MacCalendar Installer" \
@@ -59,13 +67,10 @@ create-dmg \
   --app-drop-link 450 120 \
   "$DMG_PATH" \
   "$DMG_SOURCE/" \
-  || {
-    # create-dmg 在部分环境下会因已有同名文件失败，尝试直接打包
-    hdiutil create -volname "MacCalendar Installer" -srcfolder "$DMG_SOURCE" -ov -format UDZO "$DMG_PATH"
-  }
+  || hdiutil create -volname "MacCalendar Installer" -srcfolder "$DMG_SOURCE" -ov -format UDZO "$DMG_PATH"
 
 echo ""
 echo "打包完成：$DMG_PATH"
 echo "安装：打开 dmg，将 MacCalendar.app 拖入「应用程序」"
-echo "若提示无法验证开发者，可在终端执行："
+echo "若仍提示无法验证开发者，可在终端执行："
 echo "  xattr -cr /Applications/MacCalendar.app"

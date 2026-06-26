@@ -22,23 +22,34 @@ jobs:
 
       - name: Build SwiftUI App
         run: |
+          set -euo pipefail
           xcodebuild clean build \
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
+            -sdk macosx \
+            -destination 'generic/platform=macOS' \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
+            ARCHS="arm64 x86_64" \
+            ONLY_ACTIVE_ARCH=NO \
+            ENABLE_HARDENED_RUNTIME=NO \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
+
           if [[ ! -d build/Release/MacCalendar.app ]]; then
             echo "Build failed; last 80 lines:"
             tail -80 build.log
             exit 1
           fi
+
+      - name: Sign app bundle
+        run: |
+          chmod +x scripts/sign-app.sh
+          ./scripts/sign-app.sh build/Release/MacCalendar.app
 
       - name: Install create-dmg
         run: brew install create-dmg
@@ -46,7 +57,8 @@ jobs:
       - name: Create DMG package
         run: |
           mkdir -p dmg_source dist
-          cp -r build/Release/MacCalendar.app dmg_source/
+          ditto build/Release/MacCalendar.app dmg_source/MacCalendar.app
+          xattr -cr dmg_source/MacCalendar.app
           create-dmg \
             --volname "MacCalendar Installer" \
             --window-pos 200 120 \
