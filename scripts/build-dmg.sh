@@ -27,14 +27,11 @@ xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
-  -sdk macosx \
   CODE_SIGN_IDENTITY="-" \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
   PROVISIONING_PROFILE_SPECIFIER="" \
-  ARCHS="arm64 x86_64" \
-  ONLY_ACTIVE_ARCH=NO \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 

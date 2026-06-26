@@ -21,7 +21,8 @@ xattr -cr "$APP_PATH"
 
 echo "==> ad-hoc 签名"
 if [[ -f "$ENTITLEMENTS" ]]; then
-  codesign --force --deep --sign - --entitlements "$ENTITLEMENTS" "$APP_PATH"
+  codesign --force --deep --sign - --entitlements "$ENTITLEMENTS" "$APP_PATH" \
+    || codesign --force --deep --sign - "$APP_PATH"
 else
   codesign --force --deep --sign - "$APP_PATH"
 fi
