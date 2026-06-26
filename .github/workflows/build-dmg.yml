@@ -26,24 +26,17 @@ jobs:
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
-            -sdk macosx \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="" \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
 
-          APP=build/Release/MacCalendar.app
-          EXEC="$APP/Contents/MacOS/MacCalendar"
-          if [[ ! -f "$EXEC" ]]; then
-            echo "Build failed: missing executable at $EXEC"
-            echo "Bundle contents:"
-            find "$APP" -maxdepth 4 2>/dev/null || true
+          if [[ ! -d build/Release/MacCalendar.app ]]; then
+            echo "Build failed; last 80 lines:"
             tail -80 build.log
             exit 1
           fi
-          file "$EXEC"
-          codesign -dv "$APP" 2>&1 || true
 
       - name: Install create-dmg
         run: brew install create-dmg

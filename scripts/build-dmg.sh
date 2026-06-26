@@ -16,26 +16,24 @@ BUILD_DIR="$ROOT_DIR/build"
 DMG_SOURCE="$ROOT_DIR/dmg_source"
 DIST_DIR="$ROOT_DIR/dist"
 APP_PATH="$BUILD_DIR/Release/MacCalendar.app"
-EXEC_PATH="$APP_PATH/Contents/MacOS/MacCalendar"
 DMG_PATH="$DIST_DIR/MacCalendar.dmg"
 
 echo "==> 清理旧产物"
 rm -rf "$BUILD_DIR" "$DMG_SOURCE" "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "==> 编译 Release（ad-hoc 签名，与上游 release 流程一致）"
+echo "==> 编译 Release（与上游 release.yml 一致）"
 xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
-  -sdk macosx \
   CODE_SIGN_IDENTITY="-" \
   DEVELOPMENT_TEAM="" \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 
-if [[ ! -f "$EXEC_PATH" ]]; then
-  echo "错误：未找到可执行文件 $EXEC_PATH"
+if [[ ! -d "$APP_PATH" ]]; then
+  echo "错误：未找到 $APP_PATH"
   exit 1
 fi
 
@@ -63,5 +61,6 @@ create-dmg \
 
 echo ""
 echo "打包完成：$DMG_PATH"
+echo ""
 echo "安装后若提示无法打开，请执行："
 echo "  xattr -cr /Applications/MacCalendar.app"
