@@ -1,0 +1,57 @@
+name: Build DMG (manual)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+
+jobs:
+  build-dmg:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build SwiftUI App
+        run: |
+          xcodebuild clean build \
+            -project "MacCalendar.xcodeproj" \
+            -scheme "MacCalendar" \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
+            SYMROOT=$(pwd)/build \
+            OBJROOT=$(pwd)/build
+
+      - name: Install create-dmg
+        run: brew install create-dmg
+
+      - name: Create DMG package
+        run: |
+          mkdir -p dmg_source dist
+          cp -r build/Release/MacCalendar.app dmg_source/
+          create-dmg \
+            --volname "MacCalendar Installer" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "MacCalendar.app" 150 120 \
+            --hide-extension "MacCalendar.app" \
+            --app-drop-link 450 120 \
+            "dist/MacCalendar.dmg" \
+            "dmg_source/"
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MacCalendar-dmg
+          path: dist/MacCalendar.dmg
+          if-no-files-found: error

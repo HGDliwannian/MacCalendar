@@ -1,3 +1,6 @@
 .workbuddy/
 .DS_Store
-.github/
+# 保留 workflows 以便 GitHub Actions 打包
+.github/*
+!.github/workflows/
+!.github/workflows/**

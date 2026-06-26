@@ -28,6 +28,10 @@ class CalendarManager: ObservableObject {
     private var calendarDataCache: [Date: [CalendarDay]] = [:]
     // 事件缓存，键为日期范围的开始和结束日期的字符串表示
     private var eventsCache: [String: [CalendarEvent]] = [:]
+    // AIGC START
+    private var lastFirstDayInWeek: FirstDayInWeek = SettingsManager.firstDayInWeek
+    private var lastShowWeekNumber: Bool = SettingsManager.showWeekNumber
+    // AIGC END
     
     init() {
         Task {
@@ -51,10 +55,21 @@ class CalendarManager: ObservableObject {
             .publisher(for: UserDefaults.didChangeNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateWeekdays()
+                self?.refreshWeekdaysIfNeeded()
             }
             .store(in: &cancellables)
     }
+    
+    // AIGC START
+    private func refreshWeekdaysIfNeeded() {
+        let first = SettingsManager.firstDayInWeek
+        let showWeek = SettingsManager.showWeekNumber
+        guard first != lastFirstDayInWeek || showWeek != lastShowWeekNumber else { return }
+        lastFirstDayInWeek = first
+        lastShowWeekNumber = showWeek
+        updateWeekdays()
+    }
+    // AIGC END
     
     private func updateWeekdays() {
         if SettingsManager.firstDayInWeek == .monday {

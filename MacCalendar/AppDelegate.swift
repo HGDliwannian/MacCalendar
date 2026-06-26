@@ -25,6 +25,8 @@ class AppDelegate: NSObject,NSApplicationDelegate, NSWindowDelegate {
     private var isPopoverAnimating = false
     
     private var appearanceObserver: NSObjectProtocol?
+    private var effectiveAppearanceObserver: NSObjectProtocol?
+    private var lastAppearanceMode: AppearanceMode = SettingsManager.appearanceMode
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared = self
@@ -137,6 +139,36 @@ class AppDelegate: NSObject,NSApplicationDelegate, NSWindowDelegate {
         popover = NSPopover()
         popover.behavior = .transient
         
+        hostingController = NSHostingController(rootView: makePopoverContentView())
+        popover.contentViewController = hostingController
+        
+        updateAppearance()
+        
+        // 监听 App 内「外观模式」设置变化（避免每次无关 UserDefaults 广播都跑一遍）
+        appearanceObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateAppearanceIfNeeded()
+        }
+        
+        // AIGC START
+        // 跟随系统时 popover.appearance 保持 nil，不能再靠 nil→nil 强制刷新；
+        // 需在系统 effective appearance 变化时单独刷新 SwiftUI，否则会一直显示旧配色。
+        effectiveAppearanceObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeEffectiveAppearanceNotification,
+            object: NSApp,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleEffectiveAppearanceChange()
+        }
+        // AIGC END
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: NSApplication.didResignActiveNotification, object: nil)
+    }
+    
+    private func makePopoverContentView() -> AnyView {
         let contentView = ContentView(calendarManager: self.calendarManager)
             .onPreferenceChange(SizeKey.self){ size in
                 guard size != .zero else { return }
@@ -152,22 +184,27 @@ class AppDelegate: NSObject,NSApplicationDelegate, NSWindowDelegate {
                 // 延迟80ms执行
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: workItem)
             }
-        hostingController = NSHostingController(rootView: AnyView(contentView))
-        popover.contentViewController = hostingController
-        
-        updateAppearance()
-        
-        // 监听外观设置变化
-        appearanceObserver = NotificationCenter.default.addObserver(
-            forName: UserDefaults.didChangeNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateAppearance()
-        }
-        
-        NotificationCenter.default.addObserver(self, selector: #selector(closePopover), name: NSApplication.didResignActiveNotification, object: nil)
+        return AnyView(contentView)
     }
+    
+    // AIGC START
+    private func updateAppearanceIfNeeded() {
+        let mode = SettingsManager.appearanceMode
+        guard mode != lastAppearanceMode else { return }
+        lastAppearanceMode = mode
+        updateAppearance()
+    }
+    
+    private func handleEffectiveAppearanceChange() {
+        guard SettingsManager.appearanceMode == .system else { return }
+        refreshPopoverContentView()
+    }
+    
+    private func refreshPopoverContentView() {
+        guard let hostingController else { return }
+        hostingController.rootView = makePopoverContentView()
+    }
+    // AIGC END
     
     private func updateAppearance() {
         let desired = SettingsManager.appearanceMode.nsAppearance
