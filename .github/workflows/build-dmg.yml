@@ -27,7 +27,10 @@ jobs:
             -scheme "MacCalendar" \
             -configuration Release \
             CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
+            PROVISIONING_PROFILE_SPECIFIER="" \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
@@ -38,12 +41,14 @@ jobs:
             exit 1
           fi
 
-      - name: Verify app signature
+      - name: Ad-hoc sign app
         run: |
-          xattr -cr build/Release/MacCalendar.app
-          codesign --verify --deep --verbose=2 build/Release/MacCalendar.app
-          codesign -dv --verbose=2 build/Release/MacCalendar.app 2>&1 || true
-          file build/Release/MacCalendar.app/Contents/MacOS/MacCalendar
+          APP=build/Release/MacCalendar.app
+          test -f "$APP/Contents/MacOS/MacCalendar"
+          xattr -cr "$APP"
+          codesign --force --deep --sign - "$APP"
+          file "$APP/Contents/MacOS/MacCalendar"
+          codesign -dv "$APP" 2>&1 || true
 
       - name: Install create-dmg
         run: brew install create-dmg
