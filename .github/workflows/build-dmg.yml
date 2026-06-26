@@ -26,6 +26,7 @@ jobs:
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
+            -sdk macosx \
             CODE_SIGN_IDENTITY="-" \
             DEVELOPMENT_TEAM="" \
             SYMROOT=$(pwd)/build \
@@ -35,7 +36,9 @@ jobs:
           APP=build/Release/MacCalendar.app
           EXEC="$APP/Contents/MacOS/MacCalendar"
           if [[ ! -f "$EXEC" ]]; then
-            echo "Build failed: missing executable"
+            echo "Build failed: missing executable at $EXEC"
+            echo "Bundle contents:"
+            find "$APP" -maxdepth 4 2>/dev/null || true
             tail -80 build.log
             exit 1
           fi

@@ -28,6 +28,7 @@ xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
+  -sdk macosx \
   CODE_SIGN_IDENTITY="-" \
   DEVELOPMENT_TEAM="" \
   SYMROOT="$BUILD_DIR" \
