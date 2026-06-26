@@ -38,11 +38,12 @@ jobs:
             exit 1
           fi
 
-      - name: Sign app bundle
+      - name: Verify app signature
         run: |
-          chmod +x scripts/sign-app.sh
-          ./scripts/sign-app.sh build/Release/MacCalendar.app
-        continue-on-error: false
+          xattr -cr build/Release/MacCalendar.app
+          codesign --verify --deep --verbose=2 build/Release/MacCalendar.app
+          codesign -dv --verbose=2 build/Release/MacCalendar.app 2>&1 || true
+          file build/Release/MacCalendar.app/Contents/MacOS/MacCalendar
 
       - name: Install create-dmg
         run: brew install create-dmg

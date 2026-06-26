@@ -37,7 +37,7 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
-echo "==> 签名 app（ad-hoc，避免 macOS 报已损坏）"
+echo "==> 验证/补签 app"
 "$ROOT_DIR/scripts/sign-app.sh" "$APP_PATH"
 
 echo "==> 准备 create-dmg"
