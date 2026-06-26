@@ -26,37 +26,19 @@ jobs:
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
-            -sdk macosx \
-            ENABLE_HARDENED_RUNTIME=NO \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
 
-          if [[ ! -d build/Release/MacCalendar.app ]]; then
-            echo "Build failed; last 80 lines:"
+          APP=build/Release/MacCalendar.app
+          EXEC="$APP/Contents/MacOS/MacCalendar"
+          if [[ ! -f "$EXEC" ]]; then
+            echo "Build failed: missing executable"
             tail -80 build.log
             exit 1
           fi
-
-      - name: Ad-hoc sign app
-        run: |
-          APP=build/Release/MacCalendar.app
-          EXEC="$APP/Contents/MacOS/MacCalendar"
-          echo "== App bundle =="
-          ls -la "$APP/Contents/MacOS/" || true
-          if [[ ! -f "$EXEC" ]]; then
-            echo "ERROR: 找不到可执行文件 $EXEC"
-            exit 1
-          fi
-          xattr -cr "$APP"
-          # 先签 executable，再签 .app（比 --deep 更稳）
-          codesign --force --sign - --timestamp=none "$EXEC"
-          codesign --force --sign - --timestamp=none "$APP"
           file "$EXEC"
           codesign -dv "$APP" 2>&1 || true
 

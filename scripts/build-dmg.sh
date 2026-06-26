@@ -23,30 +23,20 @@ echo "==> 清理旧产物"
 rm -rf "$BUILD_DIR" "$DMG_SOURCE" "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "==> 编译 Release"
+echo "==> 编译 Release（ad-hoc 签名，与上游 release 流程一致）"
 xcodebuild clean build \
   -project "MacCalendar.xcodeproj" \
   -scheme "MacCalendar" \
   -configuration Release \
-  -sdk macosx \
-  ENABLE_HARDENED_RUNTIME=NO \
   CODE_SIGN_IDENTITY="-" \
-  CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
-  PROVISIONING_PROFILE_SPECIFIER="" \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 
 if [[ ! -f "$EXEC_PATH" ]]; then
-  echo "错误：未找到 $EXEC_PATH"
+  echo "错误：未找到可执行文件 $EXEC_PATH"
   exit 1
 fi
-
-echo "==> ad-hoc 签名"
-xattr -cr "$APP_PATH"
-codesign --force --sign - --timestamp=none "$EXEC_PATH"
-codesign --force --sign - --timestamp=none "$APP_PATH"
 
 echo "==> 准备 create-dmg"
 if ! command -v create-dmg >/dev/null 2>&1; then
