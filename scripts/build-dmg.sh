@@ -28,10 +28,7 @@ xcodebuild clean build \
   -scheme "MacCalendar" \
   -configuration Release \
   CODE_SIGN_IDENTITY="-" \
-  CODE_SIGNING_ALLOWED=NO \
-  CODE_SIGNING_REQUIRED=NO \
   DEVELOPMENT_TEAM="" \
-  PROVISIONING_PROFILE_SPECIFIER="" \
   SYMROOT="$BUILD_DIR" \
   OBJROOT="$BUILD_DIR"
 

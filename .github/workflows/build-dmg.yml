@@ -22,16 +22,12 @@ jobs:
 
       - name: Build SwiftUI App
         run: |
-          set -euo pipefail
           xcodebuild clean build \
             -project "MacCalendar.xcodeproj" \
             -scheme "MacCalendar" \
             -configuration Release \
             CODE_SIGN_IDENTITY="-" \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
             DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             SYMROOT=$(pwd)/build \
             OBJROOT=$(pwd)/build \
             2>&1 | tee build.log
@@ -41,9 +37,6 @@ jobs:
             tail -80 build.log
             exit 1
           fi
-
-          echo "Built executable:"
-          file build/Release/MacCalendar.app/Contents/MacOS/MacCalendar || true
 
       - name: Sign app bundle
         run: |
