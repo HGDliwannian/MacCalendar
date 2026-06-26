@@ -15,6 +15,8 @@ class CalendarIcon: ObservableObject {
     private var timer: Timer?
     private let dateFormatter = DateFormatter()
     private var cancellables = Set<AnyCancellable>()
+    private var lastInterval: TimeInterval = .nan
+    private var lastComponent: Calendar.Component = .nanosecond
     
     init() {
         NotificationCenter.default
@@ -45,6 +47,10 @@ class CalendarIcon: ObservableObject {
         
         // 立即更新显示
         updateDisplayOutput()
+        // 记录当前更新节奏，供 refreshTimer 判断是否需要重排 timer
+        let (i, c) = getUpdateInterval()
+        lastInterval = i
+        lastComponent = c
         // 然后启动定时器
         scheduleNextTick()
     }
@@ -54,8 +60,14 @@ class CalendarIcon: ObservableObject {
     }
     
     private func refreshTimer() {
-        stopTimer()
         updateDisplayOutput()
+        let (interval, component) = getUpdateInterval()
+        // 仅当更新节奏真正变化（如 displayMode 从 icon 切到 time）才重排 timer，
+        // 避免每次无关 didChangeNotification 都拆除/重建 timer。
+        guard interval != lastInterval || component != lastComponent else { return }
+        lastInterval = interval
+        lastComponent = component
+        stopTimer()
         scheduleNextTick()
     }
     
@@ -218,15 +230,16 @@ class CalendarIcon: ObservableObject {
         
         let currentDate = Date()
         
+        let newOutput: String
         switch SettingsManager.displayMode {
         case .icon:
-            displayOutput = ""
+            newOutput = ""
         case .date:
             dateFormatter.dateFormat = "MM-dd"
-            displayOutput = dateFormatter.string(from: currentDate)
+            newOutput = dateFormatter.string(from: currentDate)
         case .time:
             dateFormatter.dateFormat = "HH:mm:ss"
-            displayOutput = dateFormatter.string(from: currentDate)
+            newOutput = dateFormatter.string(from: currentDate)
         case .custom:
             if SettingsManager.enableDoubleLine {
                 // 双行显示模式：合并上下行内容
@@ -234,11 +247,18 @@ class CalendarIcon: ObservableObject {
                 let bottomText = processCustomFormat(format: SettingsManager.doubleLineBottomFormat, date: currentDate)
                 
                 // 使用换行符连接双行内容
-                displayOutput = "\(topText)\n\(bottomText)"
+                newOutput = "\(topText)\n\(bottomText)"
             } else {
                 // 单行显示模式
-                displayOutput = processCustomFormat(format: SettingsManager.customFormatString, date: currentDate)
+                newOutput = processCustomFormat(format: SettingsManager.customFormatString, date: currentDate)
             }
+        }
+        
+        // @Published 每次赋值都会通知（即使值未变）。必须在赋值前去重，
+        // 否则 AppDelegate 的 sink 会在每次无关的 didChangeNotification 上
+        // 拆除并重建状态栏按钮，造成闪烁。
+        if newOutput != displayOutput {
+            displayOutput = newOutput
         }
     }
 }

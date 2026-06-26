@@ -9,7 +9,6 @@ import SwiftUI
 
 struct EventEditView: View {
     @EnvironmentObject var calendarManager: CalendarManager
-    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = SettingsManager.appearanceMode
     
     let event: CalendarEvent
     

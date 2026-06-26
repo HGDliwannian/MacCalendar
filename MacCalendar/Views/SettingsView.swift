@@ -10,7 +10,6 @@ import SwiftUI
 struct SettingsView: View {
     @State private var selection: SettingsType = .customized
     @ObservedObject var calendarManager: CalendarManager
-    @AppStorage("appearanceMode") private var appearanceMode: AppearanceMode = SettingsManager.appearanceMode
     
     var body: some View {
         NavigationSplitView {

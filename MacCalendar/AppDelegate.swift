@@ -170,10 +170,19 @@ class AppDelegate: NSObject,NSApplicationDelegate, NSWindowDelegate {
     }
     
     private func updateAppearance() {
-        let mode = SettingsManager.appearanceMode
-        popover.appearance = mode.nsAppearance
-        settingsWindow?.appearance = mode.nsAppearance
-        eventEditWindow?.appearance = mode.nsAppearance
+        let desired = SettingsManager.appearanceMode.nsAppearance
+        // 仅当目标外观与当前不同时才赋值；重复赋相同值（尤其 .system 的 nil→nil）
+        // 会强制 AppKit 在 popover 动画期间重新解析 effective appearance，造成明暗闪烁。
+        // NSAppearance(named:) 返回共享单例，!== 身份比较可靠（含 nil==nil 跳过）。
+        if popover.appearance !== desired {
+            popover.appearance = desired
+        }
+        if let window = settingsWindow, window.appearance !== desired {
+            window.appearance = desired
+        }
+        if let window = eventEditWindow, window.appearance !== desired {
+            window.appearance = desired
+        }
     }
     
     @objc func statusItemClicked(sender: NSStatusBarButton) {
